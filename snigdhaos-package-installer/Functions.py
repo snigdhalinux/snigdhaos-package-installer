@@ -12,6 +12,9 @@ import threading
 import psutil
 import logging
 import shutil
+from datetime import datetime
+from Settings import Settings
+from logging.handlers import TimedRotatingFileHandler
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -34,11 +37,13 @@ process_timeout = 600
 snigdhaos_core_repo = [
     "#[snigdhaos-core]",
     "#Server = https://snigdhalinux.github.io/snigdhaos-core/x86_64",
+    #Server = https://snigdhalinux.github.io/$repo/$arch
 ]
 
 snigdhaos_spectrum_repo = [
     "#[spectrum]",
     "#Server = https://build.snigdhaos.org/spectrum/x86_64",
+    #Server = https://build.snigdhaos.org/$repo/$arch
 ]
 
 log_dir = "/var/log/spi/"
@@ -88,5 +93,57 @@ except os.error as oserror:
 
 # Just need to make a settings file!
 try:
-    settings
+    settings = Settings(False, False)
+    settings_config = settings.read_config_file()
+    logger = logging.getLogger("logger")
+    ch = logging.StreamHandler()
+    tfh = TimedRotatingFileHandler(event_logfile, encoding="UTF-8", delay=False, when="W4")
+    if settings_config:
+        debug_logging_enabled = None
+        debug_logging_enabled = settings_config["Debug Logging"]
+        if debug_logging_enabled is not None and debug_logging_enabled is True:
+            logger.setLevel(logging.DEBUG)
+            ch.setLevel(logging.DEBUG)
+            tfh.setLevel(level=logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+            ch.setLevel(logging.INFO)
+            tfh.setLevel(level=logging.INFO)
+    else:
+        logger.setLevel(logging.INFO)
+        ch.setLevel(logging.INFO)
+        tfh.setLevel(level=logging.INFO)
+    formatter = logging.Formatter(
+        "%(asctime)s:%(levelname)s > %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
+    ch.setFormatter(formatter)
+    tfh.setFormatter(formatter)
+    logger.addHandler(ch)
+    logger.addHandler(tfh)
+except Exception as e:
+    print("[ERROR] Found Exception: %s" % e)
+
+
+def _on_close_create_packages_file():
+    try:
+        logger.info(
+            "App Closing With Saving Currently Installed Packages -> File!"
+        )
+        packages_file = "%s-package.txt" % datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        logger.info("Saving: %s%s" % (log_dir, packages_file))
+        cmd = ["pacman", "-Q"]
+        with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+        ) as process:
+            with open("%s/%s" % (log_dir, packages_file), "w") as f:
+                for line in process.stdout:
+                    f.write("%s" % line)
+    except Exception as e:
+        print("[ERROR] Found Exception in _on_close_create_packages_file(): %s" % e)
+
+
 
