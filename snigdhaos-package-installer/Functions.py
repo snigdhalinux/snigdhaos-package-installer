@@ -12,7 +12,8 @@ import threading
 import psutil
 import logging
 import shutil
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from Settings import Settings
 from logging.handlers import TimedRotatingFileHandler
 
@@ -145,5 +146,144 @@ def _on_close_create_packages_file():
     except Exception as e:
         print("[ERROR] Found Exception in _on_close_create_packages_file(): %s" % e)
 
+# Global ->
+def _get_position(lists, value):
+    data = [string for string in lists if value in string]
+    position = lists.index(data[0])
+    return position
 
+def is_file_stale(filepath, stale_days, stale_hours, stale_minutes):
+    now = datetime.now()
+    stale_datetime = now - timedelta(
+        days=stale_days, hours=stale_hours, minutes=stale_minutes
+    )
+    if os.path.exists(filepath):
+        file_created = datetime.fromtimestamp(os.path.getctime(filepath))
+        if file_created < stale_datetime:
+            return True
+    return False
 
+def sync_package_db():
+    try:
+        sync_str = ["pacman", "-Sy"]
+        logger.info(
+            "Synchronizing Database..."
+        )
+        process_sync = subprocess.run(
+            sync_str,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=process_timeout,
+        )
+        if process_sync.returncode == 0:
+            return None
+        else:
+            if process_sync.stdout:
+                out = str(process_sync.stdout.decode("utf-8"))
+                logger.error(out)
+                return out
+    except Exception as e:
+        print("[ERROR] Found Exception in sync_package_db(): %s" % e)
+
+def sync_file_db():
+    try:
+        sync_str = ["pacman", "-Fy"]
+        logger.info(
+            "Synchronizing Database..."
+        )
+        process_sync = subprocess.run(
+            sync_str,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=process_timeout,
+        )
+        if process_sync.returncode == 0:
+            return None
+        else:
+            if process_sync.stdout:
+                out = str(process_sync.stdout.decode("utf-8"))
+                logger.error(out)
+                return out
+    except Exception as e:
+        print("[ERROR] Found Exception in sync_file_db(): %s" % e)
+
+# Pacman install & remove process
+        
+def start_subprocess(self, cmd, progress_dialog, action, pkg, widget):
+    try:
+        self.switch_package_version.set_sensitive(False)
+        self.switch_snigdhaos_keyring.set_sensitive(False)
+        # self.switch_package_version.set_sensitive(False)
+        widget.set_sensitive(False)
+        process_stdout_lst = []
+        process_stdout_lst.append("Command = %s\n\n" % " ".join(cmd))
+        with subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True,
+        ) as process:
+            if progress_dialog is not None:
+                progress_dialog.pkg_dialog_closed = False
+            self.in_progress = True
+            if(progress_dialog is not None and progress_dialog.pkg_dialog_closed is False):
+                line = ("Pacman is Currently Processing %s of Package %s \n\n Command Running -> %s\n\n" % (action,pkg.name, " ".join(cmd)))
+                GLib.idle_add(
+                    update_progress_txt_view,
+                    self,
+                    line,
+                    progress_dialog,
+                    priority=GLib.PRIORITY_DEFAULT,
+                )
+            logger.debug("Pacman is busy!")
+            while True:
+                if process.poll() is not None:
+                    break
+                if progress_dialog is not None and progress_dialog.pkg_dialog_closed is False:
+                    for line in process.stdout:
+                        GLib.idle_add(
+                            update_progress_txt_view,
+                            self,
+                            line,
+                            progress_dialog,
+                            priority=GLib.PRIORITY_DEFAULT,
+                        )
+                    time.sleep(0.3)
+                else:
+                    for line in process.stdout:
+                        process_stdout_lst.append(line)
+                    time.sleep(1)
+            returncode = None
+            returncode = process.poll()
+            # Print log
+            logger.debug("Pacman return code -> %s" % returncode)
+            if returncode is not None:
+                logger.info("Completed -> %s" % " ".join(cmd))
+                GLib.idle_add(
+                    refresh_ui,
+                    self,
+                    action,
+                    widget,
+                    pkg,
+                    progress_dialog,
+                    process_stdout_lst,
+                    priotiry=GLib.PRIORITY_DEFAULT,
+                )
+    except SystemError as se:
+        logger.error("Pacman Failed -> %s" % (action,se))
+        process.terminate()
+        if progress_dialog is not None:
+            print("O")
+            # progress_dialog. #spiinc0002
+        self.switch_package_version.set_sensitive(True)
+        self.switch_snigdhaos_keyring.set_sensitive(True)
+
+def refresh_ui(self,pkg,progress_dialog):
+    self.switch_package_version.set_sensitive(True)
+    self.switch_snigdhaos_keyring.set_sensitive(True)
+    logger.debug("Checking Whether %s is installed or not..." % pkg.name)
+    if progress_dialog is not None:
+        # inherit from user interface
