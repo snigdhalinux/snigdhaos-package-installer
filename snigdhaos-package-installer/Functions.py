@@ -11,6 +11,7 @@ import subprocess
 import threading
 import psutil
 import logging
+import shutil
 
 import gi
 gi.require_version("Gtk", "3.0")
