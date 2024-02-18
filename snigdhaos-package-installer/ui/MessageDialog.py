@@ -59,5 +59,30 @@ class MessageDialog(Gtk.Dialog):
                 msg_buffer.get_end_iter(),
                 "Event timestamp = %s\n" % fn.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
             )
-            
+            msg_buffer.insert(msg_buffer.get_end_iter(), "%s\n" % first_msg)
+            msg_buffer.insert(msg_buffer.get_end_iter(), "%s\n" % second_msg)
+            headerbar.set_property("can-focus", True)
+            Gtk.Window.garb_focus(headerbar)
+            scrolled_window.add(textview)
+            grid_message.attach(scrolled_window, 0, 2, 1, 1)
+            grid_message.attach(lbl_padding2, 0, 3, 1, 1)
+            self.set_default_size(800,600)
+        else:
+            lbl_first_message = Gtk.Label(xalign=0,yalign=0)
+            lbl_first_message.set_text(first_msg)
+            lbl_second_message = Gtk.Label(xalign=0,yalign=0)
+            lbl_second_message.set_markup("%s" % second_msg)
+            grid_message.attach(lbl_first_message, 0, 2, 1, 1)
+            grid_message.attach(lbl_second_message, 0, 3, 1, 1)
+            self.set_default_size(600,100)
+            self.set_resizable(False)
+        vbox_close = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        vbox_close.pack_start(btn_ok, True, True, 1)
+        self.vbox.add(grid_message)
+        self.vbox.add(vbox_close)
+
+def on_message_dialog_ok_response(self, widget):
+    widget.destroy()
+
+
 
