@@ -247,7 +247,7 @@ class GUI:
             self.add(self.vbox)
 
             # This section sets up the tabs, and the array for dealing with the tab content
-            """
+            
             yaml_files_unsorted = []
             path = base_dir + "/yaml/"
             for file in os.listdir(path):
@@ -259,8 +259,7 @@ class GUI:
                     )
             # Need to sort the list (Or do we? I choose to)
             yaml_files = sorted(yaml_files_unsorted)
-            """
-
+        
             # Check github for updated files
             fn.check_github(yaml_files)
 
