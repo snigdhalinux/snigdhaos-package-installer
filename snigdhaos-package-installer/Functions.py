@@ -281,12 +281,71 @@ def start_subprocess(self, cmd, progress_dialog, action, pkg, widget):
         self.switch_package_version.set_sensitive(True)
         self.switch_snigdhaos_keyring.set_sensitive(True)
 
+def check_package_installed(package_name):
+    query_str = ["pacman", "-Qq"]
+    try:
+        process_pkg_installed = subprocess.run(
+            query_str,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=process_timeout,
+            universal_newlines=True,
+        )
+        if package_name in process_pkg_installed.stdout.splitlines():
+            return True
+        else:
+            if check_pacman_localdb(package_name):
+                return True
+            else:
+                return False
+    except subprocess.CalledProcessError:
+        return False
+
+def check_pacman_localdb(package_name):
+    query_str = ["pacman", "-Qq"]
+    try:
+        process_pkg_installed = subprocess.run(
+            query_str,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=process_timeout,
+            universal_newlines=True,
+        )
+        if process_pkg_installed.returncode == 0:
+            for line in process_pkg_installed.stdout.decode("utf-8").splitlines():
+                if line.startswith("Name            :"):
+                    if line.replace(" ","").split("Name:")[1].strip() == package_name:
+                        return True
+                if line.startswith("Replaces            :"):
+                    replaces = line.split("Replaces            :")[1].strip()
+                    if len(replaces) > 0:
+                        if package_name in replaces:
+                            return True
+        else:
+            return False
+    except subprocess.CalledProcessError:
+        return False
+
+
 def refresh_ui(self,pkg,progress_dialog):
     self.switch_package_version.set_sensitive(True)
     self.switch_snigdhaos_keyring.set_sensitive(True)
     logger.debug("Checking Whether %s is installed or not..." % pkg.name)
+    installed = check_package_installed()
     if progress_dialog is not None:
         # inherit from user interface
+        if progress_dialog.btn_package_progress_closed is False:
+            progress_dialog.set_title("[INFO] %s Insalled Successfully!" % pkg.name)
+            progress_dialog.infobar.set_name("infobar_info")
+            content = progress_dialog.infobar.get_content_area()
+            if content is not None:
+                for widget in content.get_children():
+                    content.remove(widget)
+                
+
+
 
 
 

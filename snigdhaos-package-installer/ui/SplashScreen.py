@@ -16,7 +16,7 @@ class SplashScreen(Gtk.Window):
         self.add(main_vbox)
         self.image = Gtk.Image()
         spimage = GdkPixbuf.Pixbuf().new_from_file_at_size(
-            base_dir + "/image/snigdhaos-splash.png"
+            base_dir + "/images/snigdhaos-splash.png"
         )
         self.image.set_from_pixbuf(spimage)
         main_vbox.pack_start(self.image, True, True, 0)
