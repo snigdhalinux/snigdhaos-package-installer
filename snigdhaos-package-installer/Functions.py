@@ -287,3 +287,13 @@ def refresh_ui(self,pkg,progress_dialog):
     logger.debug("Checking Whether %s is installed or not..." % pkg.name)
     if progress_dialog is not None:
         # inherit from user interface
+
+
+
+
+
+# #eshanined : To Create Functions:
+# get_current_installed()
+# check_package_installed()
+# check_github()
+# verify_snigdhaos_pacman_conf()
