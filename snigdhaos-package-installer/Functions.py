@@ -374,16 +374,8 @@ def refresh_ui(self,pkg,progress_dialog,action,switch,process_stdout_lst):
                 message_dialog = 
 
 
-
-
-
-
-
-
-
-
 # #eshanined : To Create Functions:
 # get_current_installed()
-# check_package_installed()
+# check_package_installed()  -> done
 # check_github()
 # verify_snigdhaos_pacman_conf()
