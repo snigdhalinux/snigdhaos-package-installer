@@ -329,13 +329,12 @@ def check_pacman_localdb(package_name):
         return False
 
 
-def refresh_ui(self,pkg,progress_dialog):
+def refresh_ui(self,pkg,progress_dialog,action,switch,process_stdout_lst):
     self.switch_package_version.set_sensitive(True)
     self.switch_snigdhaos_keyring.set_sensitive(True)
     logger.debug("Checking Whether %s is installed or not..." % pkg.name)
     installed = check_package_installed()
     if progress_dialog is not None:
-        # inherit from user interface
         if progress_dialog.btn_package_progress_closed is False:
             progress_dialog.set_title("[INFO] %s Insalled Successfully!" % pkg.name)
             progress_dialog.infobar.set_name("infobar_info")
@@ -343,7 +342,39 @@ def refresh_ui(self,pkg,progress_dialog):
             if content is not None:
                 for widget in content.get_children():
                     content.remove(widget)
-                
+                lbl_install = Gtk.Label(xalign=0,yalign=0)
+                lbl_install.set_markup("Installed %s" % pkg.name)
+                content.add(lbl_install)
+                if self.timeout_id is not None:
+                    GLib.source_remove(self.timeout_id)
+                    self.timeout_id = None
+                self.timeout_id = GLib.timeout_add(100, reveal_infobar, self, progress_dialog)
+    if installed is False and action == "install":
+        logger.debug("Switch State = False")
+        if progress_dialog is not None:
+            switch.set_sensitive(True)
+            switch.set_state(False)
+            switch.set_active(False)
+            if progress_dialog.pkg_dialog_closed is False:
+                progress_dialog.set_title("Failed: %s" % pkg.name)
+                progress_dialog.infobar.set_name("infobar_error")
+                content = progress_dialog.infobar.get_content_area()
+                if content is not None:
+                    for widget in content.get_children():
+                        content.remove(widget)
+                    lbl_install = Gtk.Label(xalign=0,yalign=0)
+                    lbl_install.set_markup("Failed: %s" % pkg.name)
+                    content.add(lbl_install)
+                    if self.timeout_id is not None:
+                        GLib.source_remove(self.timeout_id)
+                        self.timeout_id = None
+                    self.timeout_id = GLib.timeout_add(100, reveal_infobar, self, progress_dialog)
+            else:
+                logger.debug(" ".join(process_stdout_lst))
+                message_dialog = 
+
+
+
 
 
 
