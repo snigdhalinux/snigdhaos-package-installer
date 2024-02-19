@@ -16,6 +16,7 @@ import time
 from datetime import datetime, timedelta
 from Settings import Settings
 from logging.handlers import TimedRotatingFileHandler
+from ui.MessageDialog import MessageDialog
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -371,7 +372,23 @@ def refresh_ui(self,pkg,progress_dialog,action,switch,process_stdout_lst):
                     self.timeout_id = GLib.timeout_add(100, reveal_infobar, self, progress_dialog)
             else:
                 logger.debug(" ".join(process_stdout_lst))
-                message_dialog = 
+                message_dialog = MessageDialog(
+                    "Errors Occured!",
+                    "%s Failed To Install" % pkg.name,
+                    "Pacman Failed To Install %s" % pkg.name,
+                    " ".join(process_stdout_lst),
+                    "error",
+                    True,
+                )
+                message_dialog.show_all()
+                result = message_dialog.run()
+                message_dialog.destroy()
+        elif progress_dialog is not None or progress_dialog.pkg_dialog_closed is True:
+            if ("error: failed to init transaction (unable to lock database)\n" in process_stdout_lst):
+                if progress_dialog is None:
+                    logger.debug("Adding Package to Queue")
+                    if self.display_package_progress is None:
+                        
 
 
 # #eshanined : To Create Functions:
