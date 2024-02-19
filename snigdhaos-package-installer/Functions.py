@@ -388,7 +388,7 @@ def refresh_ui(self,pkg,progress_dialog,action,switch,process_stdout_lst):
                 if progress_dialog is None:
                     logger.debug("Adding Package to Queue")
                     if self.display_package_progress is None:
-                        
+
 
 
 # #eshanined : To Create Functions:
@@ -396,3 +396,11 @@ def refresh_ui(self,pkg,progress_dialog,action,switch,process_stdout_lst):
 # check_package_installed()  -> done
 # check_github()
 # verify_snigdhaos_pacman_conf()
+
+# Misc Functions -> 
+                        
+def reveal_infobar(self, progress_dialog):
+    progress_dialog.infobar.set_revealed(True)
+    progress_dialog.infobar.show_all()
+    GLib.source_remove(self.timeout_id)
+    self.timeout_id = None
